@@ -21,6 +21,13 @@ WATCHED_TAG_RE='^tor-0\.2\.3\.\d+(-[^-]*)?$'
 NEW_STYLE_RPMS="epel-6-x86_64 epel-6-i386 fedora-17-x86_64 fedora-17-i386 fedora-16-x86_64 fedora-16-i386"
 OLD_STYLE_RPMS="epel-5-x86_64 epel-5-i386"
 
+#This should be almost always 'yes', but it may be useful to use 'no' if you make 
+#non-substantial change like increasing %specver to fix a build bug on already
+#published rpm.
+#The default below sets it to yes unless overridden in shell this script is run like
+#VERIFY_TAG=no ./this_script
+VERIFY_TAG=${VERIFY_TAG-yes}
+
 #### End settings
 
 #Exit with error code 2, args are passed to echo
@@ -38,7 +45,10 @@ function prepare_repo()
     git clone "$CLEAN_GIT" "$REPO_CLONE" || fatal "Repo clone to working copy failed"
     cd "$REPO_CLONE"
     git checkout -q "$TAG" || fatal "Failed to checkout tag $TAG"
-    git tag -v "$TAG" || fatal "Verification of $TAG signature failed"
+
+    if [ '!' "$VERIFY_TAG" = "no" ]; then
+        git tag -v "$TAG" || fatal "Verification of $TAG signature failed"
+    fi
 }
 
 #Build source rpm, then rebuild with mock for each architecture given in args

@@ -5,6 +5,10 @@
 # and build the respective RPMs for architectures selected below.
 #
 # arg1 - tag name to build; if not given, script will display latest tags and prompt
+#
+# Recognized parameters:
+# -h --help     help
+# -p            do not pull the repo in $CLEAN_GIT (useful when we have local branch)
 
 #####
 # Settings
@@ -29,6 +33,20 @@ OLD_STYLE_RPMS="epel-5-x86_64 epel-5-i386"
 VERIFY_TAG=${VERIFY_TAG-yes}
 
 #### End settings
+
+function usage()
+{
+cat <<ENDUSAGE
+Builds RPMs for Tor using mock. See README-Tor_build_environment
+
+Usage: tor_build.sh [-p] [tag_to_build]
+
+If tag is not specified, script will ask.
+
+Parameters:
+ -p            do not pull the repo in CLEAN_GIT (useful when we have local branch)
+ENDUSAGE
+}
 
 #Exit with error code 2, args are passed to echo
 function fatal()
@@ -90,9 +108,23 @@ function copy_resulting_rpms()
 
 RPMS_SUCCESSFUL=0
 RPMS_FAILED=0
+PULL_REPO=yes
+
+if [ "$1" = "-h" -o "$1" = "--help" ]; then
+    usage
+    exit 1
+fi
+
+if [ "$1" = "-p" ]; then
+    PULL_REPO=no
+    shift
+fi
 
 #pull the repo up-to-date
-cd "$CLEAN_GIT" && git pull || fatal "Git pull failed"
+cd "$CLEAN_GIT" || fail "Cannot enter directory $CLEAN_GIT"
+if [ "$PULL_REPO" = "yes" ]; then 
+    git pull || fatal "Git pull failed"
+fi
 
 if [ -z "$1" ]; then
     #print the tag list with tagged date
@@ -119,6 +151,8 @@ RESULTDIR="$TORDIR.result"
 TORDIR_OLDRPM="$TORDIR.old_style_rpm"
 mkdir -p "$RESULTDIR"
 mkdir -p "$TORDIR_OLDRPM"
+
+echo " === Build dir is $TORDIR, results will be in $RESULTDIR === "
 
 #new style RPMs
 prepare_repo "$TORDIR"

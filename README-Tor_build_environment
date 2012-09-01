@@ -1,0 +1,77 @@
+BUILDING THE RPMS
+
+There are two build/preparation scripts in ~/TorBuildScripts:
+
+tor_build.sh - builds the packages for various distros (look into it, there are
+    some directory location settings, needs a Tor git repo checked out). The
+    git tag can be specified either as arg1 on command line, otherwise the
+    script will ask (script will pull to update the repo).
+
+move_tor_rpms.sh - after scripts are built and copied to a directory, this
+    script takes them, sorts them by distribution and architecture, then
+    creates the repository metadata necessary for yum.
+
+Steps:
+
+1. run tor_build.sh
+2. try installing some of the packages (yum localinstall tor-X.Y.Z.rpm), test
+   basic client functionality with something like:
+
+    curl --socks5-hostname localhost:9050 https://check.torproject.org
+
+3. sign the packages (offline; rpm --resign), reupload
+4. use move_tor_rpms.sh to make the structure needed for serving via http
+   (takes src dir and dst dir as arguments)
+
+
+REQUIREMENTS ON THE BUILD ENVIRONMENT (already done here)
+
+  I. Development software
+
+They are described in doc/tor-rpm-creation.txt in Tor git repo. One shortcut
+for installing the build tools (this is described in the linked howtos there):
+
+Install group development-tools
+in Fedora: 
+    yum install @development-tools
+in EL: 
+    yum groupinstall development-tools
+
+yum install fedora-packager redhat-rpm-config
+
+#this is Tor specific for building the initial RPMs
+yum install libevent-devel openssl-devel
+
+Add the user you're using to build to 'mock' group:
+
+usermod -a -G mock makerpm
+
+  II. GPG keys for git tag verification
+
+The user building RPMs must have keys of Tor devs imported via 'gpg --import'
+so that tags can be verified. Look for keys/fingerprints here (it may be outdated):
+
+https://www.torproject.org/docs/signing-keys.html.en
+
+It is still recommended though to go over the build output of tor_build.sh just
+to check which keys signed the tag and what gpg thought about it.
+
+
+CAVEATS
+
+You can't sign EL5 package on newer distribution (like EL6 or F16), old RPM has
+some ugly bugs that will render the signature useless. Cf:
+
+https://bugzilla.redhat.com/show_bug.cgi?id=436812
+
+I haven't found a workaround short of using VM or chroot (old rpm/rpm-libs code
+won't read rpm db data, so compilation of old rpm version is useless).
+
+Also, rpm with gpg does not support subkeys (signature validation will fail).
+
+
+NOTES
+
+Remember to increase '%define specver' in tor.spec.in if you're creating a new
+RPM while the Tor version is the same (e.g. when fixing a packaging issue). The
+specver is reset with new Tor version, so no need to commit it.

@@ -7,9 +7,9 @@ tor_build.sh - builds the packages for various distros (look into it, there are
     git tag can be specified either as arg1 on command line, otherwise the
     script will ask (script will pull to update the repo).
 
-move_tor_rpms.sh - after scripts are built and copied to a directory, this
-    script takes them, sorts them by distribution and architecture, then
-    creates the repository metadata necessary for yum.
+move_tor_rpms.sh - once the RPMs are built and signed, this script will create
+    the metadata structure and sort rpms from source dir to destination dir
+    with proper distro/arch subdirs.
 
 Steps:
 
@@ -59,15 +59,38 @@ to check which keys signed the tag and what gpg thought about it.
 
 CAVEATS
 
-You can't sign EL5 package on newer distribution (like EL6 or F16), old RPM has
-some ugly bugs that will render the signature useless. Cf:
+  I. EL5, GPG keys and RPM signatures
 
-https://bugzilla.redhat.com/show_bug.cgi?id=436812
+Using GPG keys and signatures created on newer distros (like EL6 or F16) may
+cause EL5 to fail validating signature:
 
-I haven't found a workaround short of using VM or chroot (old rpm/rpm-libs code
-won't read rpm db data, so compilation of old rpm version is useless).
+https://bugzilla.redhat.com/show_bug.cgi?id=436812#c10
 
-Also, rpm with gpg does not support subkeys (signature validation will fail).
+There are multiple issues:
+
+- you can't use RSA key generated on newer distro, because EL5's rpm/gpg will
+  compute incorrect key IDs (V4 key vs V3 key)
+- digest algo and signature format must be kept backward compatible to SHA1
+  (see the gpg params in the above bug)
+- rpm does not handle subkeys (DSA with ElGamal subkey being the only apparent
+  exception)
+- large GPG DSA keys (>=2048 bit) cannot be used with SHA1 - gnupg will reject
+  to make such signature, wants at least 256-bit digest (RFC 4880 thing)
+- gnupg digest preferences can override RPM digest preferences, so you might
+  end up with SHA256 digest which is not liked by EL5 rpm
+
+For EL5, use 1024-bit DSA key for RPM signing.
+
+Possibly handy macro to put in ~/.rpmmacros (forces the digest type over GPG
+preferences):
+
+%__gpg_sign_cmd                 %{__gpg} \
+        gpg --batch --digest-algo=sha1 --no-verbose --no-armor \
+        --passphrase-fd 3 --no-secmem-warning \
+        -u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}
+
+There's also "--force-v3-sigs" parameter that would force V3 signatures, but
+experimentation showed that V4 sigs are OK, just V4 RSA keys are not.
 
 
 NOTES

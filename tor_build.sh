@@ -13,13 +13,20 @@
 #####
 # Settings
 
-# directory where we can create some temp dirs
-WORKDIR=~/TorBuildWorkspace/
-# existing unmodified cloned repo, doesn't have to be up-to-date
-CLEAN_GIT="$WORKDIR/Tor.git.clean"
-
-#perl-style regexp for grepping tags we are interested in
-WATCHED_TAG_RE='^tor-0\.2\.3\.\d+(-[^-]*)?$'
+# These envvars must be set by caller's environment, otherwise
+# check_env_settings() will complain:
+#
+#  WORKDIR, CLEAN_GIT, WATCHED_TAG_RE
+#
+# Sample setting for the above variables:
+# - directory where we can create some temp dirs
+#   WORKDIR=~/TorBuildWorkspace/
+#
+# - existing unmodified cloned repo, doesn't have to be up-to-date
+#   CLEAN_GIT="$WORKDIR/Tor.git.rpm-release-0.2.3-branch"
+#
+# - perl-style regexp for grepping tags we are interested in
+#   WATCHED_TAG_RE='^rpm-tor-0\.2\.3\.\d+(-[^-]*)?$'
 
 #new-style rpms must support newer hashes like SHA256 in signatures and checksums
 NEW_STYLE_RPMS="epel-6-x86_64 epel-6-i386 fedora-17-x86_64 fedora-17-i386 fedora-16-x86_64 fedora-16-i386"
@@ -33,6 +40,20 @@ OLD_STYLE_RPMS="epel-5-x86_64 epel-5-i386"
 VERIFY_TAG=${VERIFY_TAG-yes}
 
 #### End settings
+
+function check_env_settings()
+{
+    if [ -z "$WORKDIR" -o -z "$CLEAN_GIT" -o -z "$WATCHED_TAG_RE" ]; then
+        cat<<END
+Envvar settings not set, we see (apostrophes added):
+
+        WORKDIR         : '$WORKDIR'
+        CLEAN_GIT       : '$CLEAN_GIT'
+        WATCHED_TAG_RE  : '$WATCHED_TAG_RE'
+END
+    exit 3
+    fi
+}
 
 function usage()
 {
@@ -114,6 +135,8 @@ if [ "$1" = "-h" -o "$1" = "--help" ]; then
     usage
     exit 1
 fi
+
+check_env_settings
 
 if [ "$1" = "-p" ]; then
     PULL_REPO=no

@@ -6,7 +6,7 @@ CONFIG_BASE_FNAME="rpm-release-0.2.4"
 # directory where we can create some temp dirs
 export WORKDIR="/home/makerpm/TorBuildWorkspace"
 # existing unmodified cloned repo, doesn't have to be up-to-date
-export CLEAN_GIT="/home/makerpm/TorBuildRepos/Tor.git.rpm-release-0.2.4-branch"
+export CLEAN_GIT="/home/makerpm/TorBuildRepos/Tor.git.rpm-release-allbranches/"
 
 #perl-style regexp for grepping tags we are interested in
 export WATCHED_TAG_RE='^rpm-tor-0\.2\.4\.\d+(-[^-]*)?$'

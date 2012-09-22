@@ -97,6 +97,13 @@ preferences):
 There's also "--force-v3-sigs" parameter that would force V3 signatures, but
 experimentation showed that V4 sigs are OK, just V4 RSA keys are not.
 
+Currently a copy of the scripts is kept at:
+
+https://github.com/feddeiman/tor-rpm-build-scripts
+
+It contains some tailored copies for 0.2.3 and 0.2.4 builds (tor_build-0.2.3.sh
+and tor_build-0.2.4.sh).
+
 
 NOTES
 

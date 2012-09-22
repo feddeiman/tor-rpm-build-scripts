@@ -1,5 +1,10 @@
 BUILDING THE RPMS
 
+This readme contains:
+ - how to setup the build environment
+ - currently used repos (paths)
+ - howto merge when new tor-X.Y.X tag is made, create rpm-tor-X.Y.Z tag
+
 There are two build/preparation scripts in ~/TorBuildScripts:
 
 tor_build.sh - builds the packages for various distros (look into it, there are
@@ -98,3 +103,42 @@ NOTES
 Remember to increase '%define specver' in tor.spec.in if you're creating a new
 RPM while the Tor version is the same (e.g. when fixing a packaging issue). The
 specver is reset with new Tor version, so no need to commit it.
+
+
+MERGING REPO USED FOR RPM BUILDING FROM ORIGIN (git.tpo/tor.git)
+
+The RPM fork of Tor is currently at https://gitweb.torproject.org/user/hiviah/rpm-tor.git
+(let's call the remote 'rpm-tor').
+
+Let's assume the remote for official (origin) source is named 'tpo', can be added like:
+
+    git remote add tpo https://git.torproject.org/tor.git
+
+Currently, the following path has the repo for 0.2.3.x and 0.2.4.x branches:
+
+    /home/makerpm/TorBuildRepos/Tor.git.rpm-release-allbranches
+
+Branch rpm-release-0.2.3 follows origin's release-0.2.3, branch master follows
+origin's master (will be once changed to release-0.2.4).
+
+ 1) Merging for 0.2.3 release, 0.2.3.N is the new tag the RPM is built for:
+
+    git checkout rpm-release-0.2.3
+    git fetch tpo "refs/tags/*:refs/tags/*"
+    git pull tpo tor-0.2.3.N
+    # make changes like editing tor.spec.in
+    # in a magic order ensuring stability: commit, build and check the built
+    # RPMs, push back to 'rpm-tor'
+    # Sign RPMs, create repo structure, test, upload
+
+ 2) Merging for 0.2.4 release, 0.2.4.N is the new tag the RPM is built for:
+
+    git checkout master
+    git fetch tpo "refs/tags/*:refs/tags/*"
+    git pull tpo tor-0.2.4.N
+    # make changes like editing tor.spec.in
+    # in a magic order ensuring stability: commit, build and check the built
+    # RPMs, push back to 'rpm-tor'
+    # Sign RPMs, create repo structure, test, upload
+
+
